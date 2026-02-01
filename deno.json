@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "exports": "./src/background.ts",
   "tasks": {
-    "build": "deno task build:clean && deno task build:bundle && deno task build:static",
+    "build": "deno task build:clean && deno task build:bundle && deno task build:icons && deno task build:static",
     "build:clean": "rm -rf dist && mkdir -p dist/icons",
     "build:bundle": "deno bundle --platform browser --outdir dist src/background.ts src/content.ts src/injected.ts src/popup.ts",
-    "build:static": "cp src/manifest.json src/popup.html dist/ && cp src/icons/* dist/icons/",
+    "build:icons": "rsvg-convert -w 16 -h 16 src/icons/icon.svg -o dist/icons/icon16.png && rsvg-convert -w 48 -h 48 src/icons/icon.svg -o dist/icons/icon48.png && rsvg-convert -w 128 -h 128 src/icons/icon.svg -o dist/icons/icon128.png",
+    "build:static": "cp src/manifest.json src/popup.html dist/",
     "check": "deno check src/**/*.ts",
     "fmt": "deno fmt",
     "lint": "deno lint"
