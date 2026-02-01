@@ -12,18 +12,6 @@ function injectScript() {
   script.onload = () => script.remove();
 }
 
-// Generate unique request IDs
-let requestId = 0;
-function nextRequestId(): string {
-  return `nip07-${Date.now()}-${++requestId}`;
-}
-
-// Pending requests from page
-const pendingRequests: Map<
-  string,
-  { resolve: (v: unknown) => void; reject: (e: Error) => void }
-> = new Map();
-
 // Handle messages from the injected script (page context)
 window.addEventListener("message", async (event) => {
   if (event.source !== window) return;

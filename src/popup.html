@@ -7,171 +7,187 @@
     <title>Remote NIP-07</title>
     <style>
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
-            width: 320px;
-            min-height: 200px;
-            padding: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-width: 320px;
             background: #1a1a2e;
             color: #eee;
         }
 
-        h1 {
-            font-size: 18px;
+        .container {
+            padding: 16px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 16px;
-            color: #9d4edd;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            color: #9b59b6;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        h1::before {
-            content: "⚡";
+        .header h1 svg {
+            width: 20px;
+            height: 20px;
         }
 
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
-
-        .status.connected {
-            background: rgba(46, 204, 113, 0.15);
-            border: 1px solid rgba(46, 204, 113, 0.3);
-        }
-
-        .status.disconnected {
-            background: rgba(231, 76, 60, 0.15);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .status.connected .status-dot {
-            background: #2ecc71;
-            box-shadow: 0 0 8px #2ecc71;
-        }
-
-        .status.disconnected .status-dot {
-            background: #e74c3c;
-        }
-
-        .pubkey {
-            font-family: monospace;
-            font-size: 11px;
-            color: #888;
-            word-break: break-all;
-            margin-top: 4px;
-        }
-
-        .section {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 6px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #333;
-            border-radius: 6px;
-            background: #16213e;
-            color: #eee;
-            font-size: 13px;
-            font-family: monospace;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #9d4edd;
-        }
-
-        input[type="text"]::placeholder {
-            color: #555;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
+        .btn-icon {
+            background: transparent;
             border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
+            color: #888;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        button.primary {
-            background: linear-gradient(135deg, #9d4edd 0%, #7b2cbf 100%);
-            color: white;
-        }
-
-        button.primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(157, 78, 221, 0.4);
-        }
-
-        button.primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        button.danger {
-            background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c;
-            border: 1px solid rgba(231, 76, 60, 0.3);
-        }
-
-        button.danger:hover {
-            background: rgba(231, 76, 60, 0.3);
-        }
-
-        .error {
-            color: #e74c3c;
-            font-size: 12px;
-            margin-top: 8px;
-            padding: 8px;
-            background: rgba(231, 76, 60, 0.1);
+            padding: 4px;
             border-radius: 4px;
         }
 
-        .hidden {
-            display: none !important;
+        .btn-icon:hover {
+            background: #252542;
+            color: #eee;
         }
 
-        .loading {
+        .btn-icon svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Current Site View */
+        .current-site {
+            text-align: center;
+            padding: 16px 0;
+        }
+
+        .current-host {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .current-host strong {
+            color: #9b59b6;
+            font-weight: 600;
+        }
+
+        /* Connected State */
+        .connected-state {
+            background: #252542;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .connected-icon {
+            width: 48px;
+            height: 48px;
+            background: #27ae60;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+
+        .connected-icon svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .connected-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .connected-pubkey {
+            font-size: 12px;
+            color: #888;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        .btn-disconnect {
+            margin-top: 16px;
+            background: transparent;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-disconnect:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        /* QR Connect State */
+        .qr-state {
+            text-align: center;
+        }
+
+        .qr-title {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .qr-subtitle {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        .qr-container canvas {
+            display: block;
+        }
+
+        .waiting-indicator {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            color: #888;
+            font-size: 12px;
         }
 
         .spinner {
             width: 16px;
             height: 16px;
-            border: 2px solid transparent;
-            border-top-color: currentColor;
+            border: 2px solid #444;
+            border-top-color: #9b59b6;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
@@ -180,196 +196,181 @@
             }
         }
 
-        .qr-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
-
-        #qr-code canvas {
-            display: block;
-        }
-
-        .help-text {
-            font-size: 11px;
-            color: #666;
+        /* Not Connected State */
+        .not-connected-state {
             text-align: center;
-            margin-top: 8px;
+            padding: 32px 16px;
+            color: #888;
         }
 
-        .divider {
+        .not-connected-state svg {
+            width: 48px;
+            height: 48px;
+            opacity: 0.5;
+            margin-bottom: 12px;
+        }
+
+        /* Sites List Page */
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .site-list {
             display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .site-item {
+            background: #252542;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 12px;
-            margin: 16px 0;
-            color: #555;
+        }
+
+        .site-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .site-host {
+            font-weight: 500;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .site-pubkey {
+            font-size: 11px;
+            color: #888;
+            font-family: monospace;
+        }
+
+        .btn-remove {
+            background: transparent;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
             font-size: 12px;
         }
 
-        .divider::before,
-        .divider::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: #333;
+        .btn-remove:hover {
+            background: #e74c3c;
+            color: white;
         }
 
-        .tabs {
+        .empty-list {
+            text-align: center;
+            padding: 32px 16px;
+            color: #666;
+        }
+
+        .back-link {
             display: flex;
+            align-items: center;
             gap: 4px;
+            color: #9b59b6;
+            font-size: 13px;
+            cursor: pointer;
             margin-bottom: 16px;
         }
 
-        .tab {
-            flex: 1;
-            padding: 8px;
-            background: transparent;
-            border: 1px solid #333;
-            color: #888;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+        .back-link:hover {
+            text-decoration: underline;
         }
 
-        .tab:first-child {
-            border-radius: 6px 0 0 6px;
-        }
-
-        .tab:last-child {
-            border-radius: 0 6px 6px 0;
-        }
-
-        .tab.active {
-            background: rgba(157, 78, 221, 0.2);
-            border-color: #9d4edd;
-            color: #9d4edd;
-        }
-
-        .tab:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .qr-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 16px;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
-
-        .qr-wrapper canvas {
-            display: block;
-        }
-
-        .waiting {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px;
-            background: rgba(157, 78, 221, 0.1);
-            border: 1px solid rgba(157, 78, 221, 0.3);
-            border-radius: 6px;
-            color: #9d4edd;
-            font-size: 13px;
-            margin-bottom: 12px;
-        }
-
-        button.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #888;
-            border: 1px solid #333;
-        }
-
-        button.secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: #aaa;
+        .back-link svg {
+            width: 16px;
+            height: 16px;
         }
     </style>
 </head>
 
 <body>
-    <h1>Remote NIP-07</h1>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                </svg>
+                Remote NIP-07
+            </h1>
+            <button id="btnShowList" class="btn-icon" title="All connected sites">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+                </svg>
+            </button>
+        </div>
 
-    <!-- Connected State -->
-    <div id="connected-view" class="hidden">
-        <div class="status connected">
-            <div class="status-dot"></div>
-            <div>
-                <div>Connected to Amber</div>
-                <div class="pubkey" id="display-pubkey"></div>
+        <!-- Main Page: Current Site -->
+        <div id="pageCurrent" class="page active">
+            <div class="current-site">
+                <div class="current-host">Current tab: <strong id="currentHost">-</strong></div>
+            </div>
+
+            <!-- State: Connected -->
+            <div id="stateConnected" class="connected-state" style="display: none;">
+                <div class="connected-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                </div>
+                <div class="connected-title">Connected</div>
+                <div class="connected-pubkey" id="connectedPubkey"></div>
+                <button id="btnDisconnect" class="btn-disconnect">Disconnect</button>
+            </div>
+
+            <!-- State: QR Code -->
+            <div id="stateQR" class="qr-state" style="display: none;">
+                <div class="qr-title">Scan with Amber</div>
+                <div class="qr-subtitle">Connect this site to your Nostr identity</div>
+                <div class="qr-container">
+                    <canvas id="qrCanvas"></canvas>
+                </div>
+                <div class="waiting-indicator">
+                    <div class="spinner"></div>
+                    <span>Waiting for connection...</span>
+                </div>
+            </div>
+
+            <!-- State: Not Connected (no pending) -->
+            <div id="stateNotConnected" class="not-connected-state" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                <p>Not connected</p>
+                <p style="font-size: 12px; margin-top: 8px;">
+                    This site hasn't requested access yet.
+                </p>
             </div>
         </div>
-        <button class="danger" id="disconnect-btn">Disconnect</button>
+
+        <!-- Sites List Page -->
+        <div id="pageList" class="page">
+            <div class="back-link" id="btnBack">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+                </svg>
+                Back
+            </div>
+            <div class="section-title">All Connected Sites</div>
+            <div id="siteList" class="site-list"></div>
+        </div>
     </div>
 
-    <!-- Disconnected State -->
-    <div id="disconnected-view">
-        <div class="status disconnected">
-            <div class="status-dot"></div>
-            <div>Not connected</div>
-        </div>
-
-        <div class="tabs">
-            <button class="tab active" data-tab="qr">Scan QR</button>
-            <button class="tab" data-tab="paste">Paste URI</button>
-        </div>
-
-        <!-- QR Code Tab -->
-        <div id="tab-qr" class="tab-content active">
-            <div id="qr-wrapper" class="qr-wrapper hidden">
-                <img id="qr-image" alt="QR Code" width="200" height="200">
-            </div>
-            <div id="waiting-message" class="waiting hidden">
-                <span class="spinner"></span>
-                Waiting for Amber...
-            </div>
-            <button class="primary" id="generate-qr-btn">
-                <span class="btn-text">Generate QR Code</span>
-            </button>
-            <button class="secondary hidden" id="cancel-btn">Cancel</button>
-            <p class="help-text">
-                Scan with Amber to connect
-            </p>
-        </div>
-
-        <!-- Paste URI Tab -->
-        <div id="tab-paste" class="tab-content">
-            <div class="section">
-                <label for="bunker-input">Bunker URI</label>
-                <input type="text" id="bunker-input" placeholder="bunker://pubkey?relay=wss://..." spellcheck="false"
-                    autocomplete="off">
-            </div>
-
-            <button class="primary" id="connect-btn">
-                <span class="btn-text">Connect to Amber</span>
-            </button>
-
-            <p class="help-text">
-                Open Amber → Settings → Nostr Connect → Copy bunker URI
-            </p>
-        </div>
-
-        <div id="error-message" class="error hidden"></div>
-    </div>
-
-    <script src="lib/qrcode.min.js"></script>
-    <script type="module" src="popup.js"></script>
+    <script src="popup.js" type="module"></script>
 </body>
 
 </html>

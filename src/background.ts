@@ -1,77 +1,92 @@
 /**
  * Background Service Worker
- * Handles NIP-46 communication with Amber and manages extension state
+ * Handles per-site NIP-46 connections with Amber
+ * Each site (origin) gets its own independent connection
  */
 
 import {
   createNIP46Request,
   generateSessionKeypair,
   type NIP46Session,
-  parseBunkerUri,
   parseNIP46Response,
 } from "./lib/nip46.ts";
 import { RelayPool } from "./lib/relay.ts";
 import type { NostrEvent, SignedEvent, UnsignedEvent } from "./lib/nostr.ts";
 
-// State
-type ConnectionState = "idle" | "awaiting_connection" | "connected";
-let connectionState: ConnectionState = "idle";
-let nostrConnectUri: string | null = null;
-let session: NIP46Session | null = null;
-let relayPool: RelayPool | null = null;
-let remotePubkey: string | null = null;
-let pendingNostrConnect: {
+// Per-site session data
+interface SiteSession extends NIP46Session {
+  host: string;
+  userPubkey: string; // The actual Nostr pubkey of the user for this site
+  connectedAt: number;
+}
+
+// Pending connection for a site
+interface PendingConnection {
+  host: string;
+  uri: string;
+  secret: string;
+  session: NIP46Session;
+  relayPool: RelayPool;
   resolve: (pubkey: string) => void;
   reject: (e: Error) => void;
   timeout: ReturnType<typeof setTimeout>;
-} | null = null;
+}
+
+// State
+const siteSessions: Map<string, SiteSession> = new Map();
+const siteRelayPools: Map<string, RelayPool> = new Map();
 const pendingRequests: Map<
   string,
-  { resolve: (v: unknown) => void; reject: (e: Error) => void }
+  { host: string; resolve: (v: unknown) => void; reject: (e: Error) => void }
 > = new Map();
+let pendingConnection: PendingConnection | null = null;
+// Track pending getPublicKey calls so multiple requests wait for the same connection
+const pendingGetPubkeyPromises: Map<string, Promise<string>> = new Map();
 
 // Storage keys
-const STORAGE_KEY_SESSION = "nip46_session";
-const STORAGE_KEY_PUBKEY = "remote_pubkey";
+const STORAGE_KEY_SITES = "site_sessions";
+
+// Default relay for nostrconnect
+const DEFAULT_RELAYS = ["wss://relay.nsec.app"];
 
 /**
- * Initialize on startup - restore session if available
+ * Initialize on startup - restore sessions if available
  */
 async function init() {
   try {
-    const stored = await chrome.storage.local.get([
-      STORAGE_KEY_SESSION,
-      STORAGE_KEY_PUBKEY,
-    ]);
+    const stored = await chrome.storage.local.get([STORAGE_KEY_SITES]);
+    const storedSites = stored[STORAGE_KEY_SITES] as
+      | Record<string, SiteSession>
+      | undefined;
 
-    if (stored[STORAGE_KEY_SESSION] && stored[STORAGE_KEY_PUBKEY]) {
-      session = stored[STORAGE_KEY_SESSION] as NIP46Session;
-      remotePubkey = stored[STORAGE_KEY_PUBKEY] as string;
-      connectionState = "connected";
-      await connectToRelays();
-      console.log("[Background] Session restored");
+    if (storedSites) {
+      for (const [host, session] of Object.entries(storedSites)) {
+        siteSessions.set(host, session);
+        await connectSiteToRelays(host, session);
+      }
+      console.log("[Background] Restored", siteSessions.size, "site sessions");
     }
   } catch (e) {
-    console.error("[Background] Failed to restore session:", e);
+    console.error("[Background] Failed to restore sessions:", e);
   }
 }
 
 /**
- * Connect to relays and subscribe for responses
+ * Connect a site to its relays and subscribe for responses
  */
-async function connectToRelays() {
-  if (!session) return;
-
-  if (relayPool) {
-    relayPool.close();
+async function connectSiteToRelays(host: string, session: SiteSession) {
+  // Close existing pool if any
+  const existingPool = siteRelayPools.get(host);
+  if (existingPool) {
+    existingPool.close();
   }
 
-  relayPool = new RelayPool(session.relayUrls);
+  const relayPool = new RelayPool(session.relayUrls);
   await relayPool.connect();
 
-  // Subscribe for responses from Amber
+  // Subscribe for responses from Amber for this site
   relayPool.subscribe(
-    "nip46-responses",
+    `nip46-${host}`,
     [
       {
         kinds: [24133],
@@ -79,123 +94,190 @@ async function connectToRelays() {
         since: Math.floor(Date.now() / 1000) - 60,
       },
     ],
-    handleRelayEvent,
+    (event) => handleRelayEvent(host, event),
   );
+
+  siteRelayPools.set(host, relayPool);
 }
 
 /**
- * Handle incoming NIP-46 response events
+ * Handle incoming NIP-46 response events for a specific site
  */
-async function handleRelayEvent(event: NostrEvent) {
-  console.log("[Background] Received event:", {
+async function handleRelayEvent(host: string, event: NostrEvent) {
+  console.log("[Background] Received event for", host, ":", {
     id: event.id,
     pubkey: event.pubkey,
     kind: event.kind,
-    contentLength: event.content?.length,
   });
 
-  if (!session) {
-    console.log("[Background] No session, ignoring event");
+  // Check if this is for a pending connection
+  if (pendingConnection && pendingConnection.host === host) {
+    await handlePendingConnectionEvent(event);
     return;
   }
 
-  console.log("[Background] Session state:", {
-    localPubkey: session.localPubkey,
-    remotePubkey: session.remotePubkey || "(not set)",
-    hasPendingNostrConnect: !!pendingNostrConnect,
-    pendingRequestIds: Array.from(pendingRequests.keys()),
-  });
+  const session = siteSessions.get(host);
+  if (!session) {
+    console.log("[Background] No session for", host);
+    return;
+  }
 
   try {
-    console.log("[Background] Attempting to decrypt...");
     const response = await parseNIP46Response(event as SignedEvent, session);
     console.log("[Background] Decrypted response:", response);
 
-    // Handle connect response for nostrconnect flow
-    // NIP-46: result is "ack" OR the secret value we sent
-    const isConnectResponse = pendingNostrConnect && (
-      response.result === "ack" ||
-      (session.secret && response.result === session.secret)
-    );
-
-    if (isConnectResponse) {
-      console.log("[Background] Got connect response for nostrconnect!");
-      // Amber connected! Store the remote pubkey
-      session.remotePubkey = event.pubkey!;
-
-      // Get the user's pubkey
-      console.log("[Background] Requesting user pubkey...");
-      const pubkey = (await sendRequest("get_public_key", [])) as string;
-      console.log("[Background] Got user pubkey:", pubkey);
-      remotePubkey = pubkey;
-      connectionState = "connected";
-      nostrConnectUri = null;
-
-      // Store session
-      await chrome.storage.local.set({
-        [STORAGE_KEY_SESSION]: session,
-        [STORAGE_KEY_PUBKEY]: pubkey,
-      });
-
-      pendingNostrConnect.resolve(pubkey);
-      clearTimeout(pendingNostrConnect.timeout);
-      pendingNostrConnect = null;
-      console.log("[Background] NostrConnect successful, pubkey:", pubkey);
-      return;
-    }
-
-    // Handle normal request responses
+    // Check if this is from the expected remote
     if (event.pubkey !== session.remotePubkey) {
-      console.log(
-        "[Background] Event from unknown pubkey, expected:",
-        session.remotePubkey,
-      );
+      console.log("[Background] Event from unknown pubkey");
       return;
     }
 
     const pending = pendingRequests.get(response.id);
-    console.log(
-      "[Background] Looking for pending request:",
-      response.id,
-      "found:",
-      !!pending,
-    );
-
-    if (pending) {
+    if (pending && pending.host === host) {
       pendingRequests.delete(response.id);
 
       if (response.error) {
-        console.log("[Background] Response has error:", response.error);
         pending.reject(new Error(response.error));
       } else {
-        console.log("[Background] Response success:", response.result);
         pending.resolve(response.result);
       }
     }
   } catch (e) {
-    // Log decryption errors for debugging
-    console.log(
-      "[Background] Failed to parse event from",
-      event.pubkey,
-      ":",
-      e,
-    );
+    console.log("[Background] Failed to parse event:", e);
   }
 }
 
 /**
- * Send a NIP-46 request and wait for response
+ * Handle event during pending connection flow
  */
-async function sendRequest(
+async function handlePendingConnectionEvent(event: NostrEvent) {
+  if (!pendingConnection) return;
+
+  const { session, secret, host } = pendingConnection;
+
+  try {
+    // Need to use the event pubkey as the remote for decryption
+    const remotePubkey = session.remotePubkey || event.pubkey!;
+    const tempSession = { ...session, remotePubkey };
+    const response = await parseNIP46Response(
+      event as SignedEvent,
+      tempSession,
+    );
+
+    console.log("[Background] Pending connection response:", response);
+
+    // Check if this is a connect response
+    const isConnectResponse = response.result === "ack" ||
+      response.result === secret;
+
+    if (isConnectResponse) {
+      console.log("[Background] Got connect response!");
+
+      // Update session with remote pubkey
+      session.remotePubkey = event.pubkey!;
+
+      // Now get the user's pubkey and complete the connection
+      await completeConnection();
+      return;
+    }
+
+    // Check if this is a response to a pending request (like get_public_key)
+    const pending = pendingRequests.get(response.id);
+    if (pending && pending.host === host) {
+      console.log("[Background] Got pending request response:", response.id);
+      pendingRequests.delete(response.id);
+
+      if (response.error) {
+        pending.reject(new Error(response.error));
+      } else {
+        pending.resolve(response.result);
+      }
+    }
+  } catch (e) {
+    console.log("[Background] Failed to handle pending connection event:", e);
+  }
+}
+
+/**
+ * Complete the connection after receiving connect ack
+ */
+async function completeConnection() {
+  if (!pendingConnection) return;
+
+  const { session, host, relayPool } = pendingConnection;
+
+  try {
+    // Get user's pubkey
+    const pubkey = await sendSiteRequest(
+      host,
+      session,
+      relayPool,
+      "get_public_key",
+      [],
+    );
+
+    console.log("[Background] Got user pubkey:", pubkey);
+
+    // Create the full site session
+    const siteSession: SiteSession = {
+      ...session,
+      host,
+      userPubkey: pubkey as string,
+      connectedAt: Date.now(),
+    };
+
+    // Store the session
+    siteSessions.set(host, siteSession);
+    siteRelayPools.set(host, relayPool);
+
+    // Subscribe for future events (replace pending subscription)
+    relayPool.subscribe(
+      `nip46-${host}`,
+      [
+        {
+          kinds: [24133],
+          "#p": [session.localPubkey],
+          since: Math.floor(Date.now() / 1000) - 10,
+        },
+      ],
+      (evt) => handleRelayEvent(host, evt),
+    );
+
+    await saveSessions();
+
+    // Notify popup
+    notifyPopup("connectionComplete", {
+      host,
+      pubkey: pubkey as string,
+    });
+
+    // Resolve the pending promise
+    clearTimeout(pendingConnection.timeout);
+    pendingConnection.resolve(pubkey as string);
+    pendingConnection = null;
+
+    console.log("[Background] Site connected:", host, "pubkey:", pubkey);
+  } catch (e) {
+    console.error("[Background] Failed to complete connection:", e);
+    notifyPopup("connectionFailed", { error: String(e) });
+  }
+}
+
+/**
+ * Send a NIP-46 request for a specific site
+ */
+async function sendSiteRequest(
+  host: string,
+  session: NIP46Session,
+  relayPool: RelayPool,
   method: string,
   params: string[],
   timeoutMs = 60000,
 ): Promise<unknown> {
-  if (!session || !relayPool) {
-    throw new Error("Not connected");
-  }
-
-  console.log("[Background] Sending NIP-46 request:", { method, params });
+  console.log("[Background] Sending request for", host, ":", {
+    method,
+    params,
+  });
 
   const { event, requestId } = await createNIP46Request(
     session,
@@ -203,22 +285,14 @@ async function sendRequest(
     params,
   );
 
-  console.log("[Background] Created event:", {
-    id: event.id,
-    pubkey: event.pubkey,
-    kind: event.kind,
-    tags: event.tags,
-    contentLength: event.content.length,
-  });
-
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       pendingRequests.delete(requestId);
-      console.log("[Background] Request timed out:", requestId);
       reject(new Error("Request timeout"));
     }, timeoutMs);
 
     pendingRequests.set(requestId, {
+      host,
       resolve: (v) => {
         clearTimeout(timeout);
         resolve(v);
@@ -229,88 +303,37 @@ async function sendRequest(
       },
     });
 
-    console.log(
-      "[Background] Publishing event, waiting for response with id:",
-      requestId,
-    );
-    relayPool!.publish(event);
+    relayPool.publish(event);
   });
 }
 
 /**
- * Connect to Amber using bunker URI
+ * Start connection flow for a site - generates QR code URI
  */
-async function connect(bunkerUri: string): Promise<{ pubkey: string }> {
-  const params = parseBunkerUri(bunkerUri);
-  console.log("[Background] Parsed bunker URI:", {
-    remotePubkey: params.remotePubkey,
-    relayUrls: params.relayUrls,
-    hasSecret: !!params.secret,
-    secretLength: params.secret?.length,
-  });
+async function startSiteConnection(host: string): Promise<{ uri: string }> {
+  // If there's already a pending connection for THIS host, reuse it
+  if (pendingConnection && pendingConnection.host === host) {
+    console.log("[Background] Reusing existing pending connection for", host);
+    return { uri: pendingConnection.uri };
+  }
 
-  const keypair = await generateSessionKeypair();
-
-  session = {
-    localPrivkey: keypair.privkey,
-    localPubkey: keypair.pubkey,
-    remotePubkey: params.remotePubkey,
-    relayUrls: params.relayUrls,
-    secret: params.secret,
-  };
-
-  await connectToRelays();
-
-  // Send connect request to Amber
-  // NIP-46: connect params are [<remote-signer-pubkey>, <optional_secret>, <optional_perms>]
-  const connectParams = params.secret
-    ? [params.remotePubkey, params.secret]
-    : [params.remotePubkey];
-  console.log("[Background] Connect params:", connectParams);
-  await sendRequest("connect", connectParams);
-
-  // Get the remote user's pubkey
-  const pubkey = (await sendRequest("get_public_key", [])) as string;
-  remotePubkey = pubkey;
-
-  // Store session (without sensitive data exposed)
-  await chrome.storage.local.set({
-    [STORAGE_KEY_SESSION]: session,
-    [STORAGE_KEY_PUBKEY]: pubkey,
-  });
-
-  console.log("[Background] Connected to Amber, pubkey:", pubkey);
-  return { pubkey };
-}
-
-/**
- * Default relay for nostrconnect if none specified
- */
-const DEFAULT_RELAYS = ["wss://relay.nsec.app"];
-
-/**
- * Start nostrconnect flow - generate URI for QR code
- */
-async function startNostrConnect(
-  relays?: string[],
-): Promise<{ uri: string; secret: string }> {
-  // Clean up any existing session
-  if (relayPool) {
-    relayPool.close();
+  // If there's a pending connection for a DIFFERENT host, cancel it
+  if (pendingConnection && pendingConnection.host !== host) {
+    cancelPendingConnection();
   }
 
   const keypair = await generateSessionKeypair();
-  const relayUrls = relays && relays.length > 0 ? relays : DEFAULT_RELAYS;
+  const relayUrls = DEFAULT_RELAYS;
 
-  // Generate a random secret for authentication
+  // Generate random secret
   const secretBytes = new Uint8Array(16);
   crypto.getRandomValues(secretBytes);
-  const secret = Array.from(secretBytes).map((b) =>
-    b.toString(16).padStart(2, "0")
-  ).join("");
+  const secret = Array.from(secretBytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
-  // Create session without remote pubkey (will be set when Amber connects)
-  session = {
+  // Create session
+  const session: NIP46Session = {
     localPrivkey: keypair.privkey,
     localPubkey: keypair.pubkey,
     remotePubkey: "", // Will be set when Amber responds
@@ -318,13 +341,13 @@ async function startNostrConnect(
     secret,
   };
 
-  // Connect to relays and subscribe for connect requests
-  relayPool = new RelayPool(relayUrls);
+  // Connect to relays
+  const relayPool = new RelayPool(relayUrls);
   await relayPool.connect();
 
-  // Subscribe for incoming connect requests addressed to us
+  // Subscribe for connect response
   relayPool.subscribe(
-    "nip46-responses",
+    `pending-${host}`,
     [
       {
         kinds: [24133],
@@ -332,14 +355,15 @@ async function startNostrConnect(
         since: Math.floor(Date.now() / 1000) - 10,
       },
     ],
-    handleRelayEvent,
+    (event) => handlePendingConnectionEvent(event),
   );
 
   // Build nostrconnect URI
-  // Format: nostrconnect://<client-pubkey>?relay=<relay>&metadata=<json>&secret=<secret>
+  // Use host as the app name so Amber shows which site is connecting
   const metadata = JSON.stringify({
-    name: "Remote NIP-07",
-    description: "NIP-07 browser extension",
+    name: `${host} (Remote NIP-07)`,
+    description: "Remote NIP-07 Signer",
+    url: `https://${host}`,
   });
 
   const params = new URLSearchParams();
@@ -351,156 +375,288 @@ async function startNostrConnect(
 
   const uri = `nostrconnect://${keypair.pubkey}?${params.toString()}`;
 
-  // Update state
-  connectionState = "awaiting_connection";
-  nostrConnectUri = uri;
+  console.log("[Background] Generated nostrconnect URI for", host);
 
-  console.log("[Background] NostrConnect URI generated:", uri);
-  return { uri, secret };
+  // Store pending connection
+  pendingConnection = {
+    host,
+    uri,
+    secret,
+    session,
+    relayPool,
+    resolve: () => {},
+    reject: () => {},
+    timeout: setTimeout(() => {}, 0),
+  };
+
+  return { uri };
 }
 
 /**
- * Wait for Amber to connect via nostrconnect
+ * Wait for pending connection to complete
  */
-function awaitNostrConnect(timeoutMs = 300000): Promise<{ pubkey: string }> {
+function awaitSiteConnection(timeoutMs = 300000): Promise<{ pubkey: string }> {
   return new Promise((resolve, reject) => {
-    if (!session) {
-      reject(new Error("No pending nostrconnect session"));
+    if (!pendingConnection) {
+      reject(new Error("No pending connection"));
       return;
     }
 
     const timeout = setTimeout(() => {
-      pendingNostrConnect = null;
-      reject(new Error("Connection timeout - no response from Amber"));
+      if (pendingConnection) {
+        pendingConnection.relayPool.close();
+        pendingConnection = null;
+      }
+      notifyPopup("connectionFailed", { error: "Connection timeout" });
+      reject(new Error("Connection timeout"));
     }, timeoutMs);
 
-    pendingNostrConnect = {
-      resolve: (pubkey: string) => resolve({ pubkey }),
-      reject,
-      timeout,
-    };
+    pendingConnection.timeout = timeout;
+    pendingConnection.resolve = (pubkey) => resolve({ pubkey });
+    pendingConnection.reject = reject;
   });
 }
 
 /**
- * Cancel pending nostrconnect
+ * Cancel pending connection
  */
-function cancelNostrConnect(): void {
-  if (pendingNostrConnect) {
-    clearTimeout(pendingNostrConnect.timeout);
-    pendingNostrConnect.reject(new Error("Cancelled"));
-    pendingNostrConnect = null;
+function cancelPendingConnection() {
+  if (pendingConnection) {
+    clearTimeout(pendingConnection.timeout);
+    pendingConnection.relayPool.close();
+    pendingConnection.reject(new Error("Cancelled"));
+    pendingConnection = null;
   }
-  if (relayPool && !remotePubkey) {
-    relayPool.close();
-    relayPool = null;
-  }
-  session = null;
-  connectionState = "idle";
-  nostrConnectUri = null;
 }
 
 /**
- * Disconnect and clear session
+ * Remove a site's session
  */
-async function disconnect(): Promise<void> {
-  if (relayPool) {
-    relayPool.close();
-    relayPool = null;
+async function removeSite(host: string) {
+  const pool = siteRelayPools.get(host);
+  if (pool) {
+    pool.close();
+    siteRelayPools.delete(host);
   }
 
-  session = null;
-  remotePubkey = null;
-  connectionState = "idle";
-  nostrConnectUri = null;
+  siteSessions.delete(host);
+  await saveSessions();
 
-  await chrome.storage.local.remove([STORAGE_KEY_SESSION, STORAGE_KEY_PUBKEY]);
-  console.log("[Background] Disconnected");
+  console.log("[Background] Removed site:", host);
 }
 
 /**
- * Get public key (NIP-07: getPublicKey)
+ * Get public key for a site (may trigger connection flow)
+ * Multiple calls for the same host will share the same pending connection
  */
-async function getPublicKey(): Promise<string> {
-  if (!remotePubkey) {
-    throw new Error("Not connected");
+async function getPublicKeyForSite(host: string): Promise<string> {
+  // Already connected?
+  const session = siteSessions.get(host);
+  if (session) {
+    return session.userPubkey;
   }
-  return remotePubkey;
+
+  // Already have a pending promise for this host?
+  const existingPromise = pendingGetPubkeyPromises.get(host);
+  if (existingPromise) {
+    console.log("[Background] Reusing existing pending connection for", host);
+    return existingPromise;
+  }
+
+  // If there's a pending connection for a DIFFERENT host, cancel it
+  if (pendingConnection && pendingConnection.host !== host) {
+    cancelPendingConnection();
+  }
+
+  // Create a new promise for this connection
+  const connectionPromise = (async () => {
+    try {
+      // If already have pending connection for this host, reuse its URI
+      let uri: string;
+      if (pendingConnection && pendingConnection.host === host) {
+        uri = pendingConnection.uri;
+      } else {
+        const result = await startSiteConnection(host);
+        uri = result.uri;
+      }
+
+      // Open popup to show QR code
+      await openPopupWithQR(host, uri);
+
+      // Wait for connection
+      const { pubkey } = await awaitSiteConnection();
+      return pubkey;
+    } finally {
+      // Clean up the pending promise
+      pendingGetPubkeyPromises.delete(host);
+    }
+  })();
+
+  pendingGetPubkeyPromises.set(host, connectionPromise);
+  return connectionPromise;
 }
 
 /**
- * Sign event (NIP-07: signEvent)
+ * Sign event for a site
  */
-async function signEvent(event: UnsignedEvent): Promise<SignedEvent> {
-  if (!session) {
-    throw new Error("Not connected");
+async function signEventForSite(
+  host: string,
+  event: UnsignedEvent,
+): Promise<SignedEvent> {
+  const session = siteSessions.get(host);
+  const relayPool = siteRelayPools.get(host);
+
+  if (!session || !relayPool) {
+    // Need to connect first
+    await getPublicKeyForSite(host);
+
+    // Now try again
+    const newSession = siteSessions.get(host);
+    const newPool = siteRelayPools.get(host);
+
+    if (!newSession || !newPool) {
+      throw new Error("Failed to connect");
+    }
+
+    const result = await sendSiteRequest(
+      newSession.host,
+      newSession,
+      newPool,
+      "sign_event",
+      [
+        JSON.stringify(event),
+      ],
+    );
+
+    return JSON.parse(result as string) as SignedEvent;
   }
 
-  const result = (await sendRequest("sign_event", [
+  const result = await sendSiteRequest(host, session, relayPool, "sign_event", [
     JSON.stringify(event),
-  ])) as string;
+  ]);
 
-  return JSON.parse(result) as SignedEvent;
+  return JSON.parse(result as string) as SignedEvent;
 }
 
 /**
- * Get connection status
+ * Get status for popup
  */
 function getStatus(): {
-  state: ConnectionState;
-  pubkey: string | null;
-  relays: string[];
-  nostrConnectUri: string | null;
+  sites: Record<string, { host: string; pubkey: string; connectedAt: number }>;
+  pendingConnection: { host: string; uri: string } | null;
 } {
+  const sites: Record<
+    string,
+    { host: string; pubkey: string; connectedAt: number }
+  > = {};
+
+  for (const [host, session] of siteSessions.entries()) {
+    sites[host] = {
+      host,
+      pubkey: session.userPubkey,
+      connectedAt: session.connectedAt,
+    };
+  }
+
   return {
-    state: connectionState,
-    pubkey: remotePubkey,
-    relays: session?.relayUrls || [],
-    nostrConnectUri,
+    sites,
+    pendingConnection: pendingConnection
+      ? { host: pendingConnection.host, uri: pendingConnection.uri }
+      : null,
   };
+}
+
+/**
+ * Save sessions to storage
+ */
+async function saveSessions() {
+  const toStore: Record<string, SiteSession> = {};
+
+  for (const [host, session] of siteSessions.entries()) {
+    toStore[host] = session;
+  }
+
+  await chrome.storage.local.set({ [STORAGE_KEY_SITES]: toStore });
+}
+
+/**
+ * Open popup and show QR code
+ */
+async function openPopupWithQR(_host: string, _uri: string) {
+  // The popup will check for pending connection and display QR
+  try {
+    await chrome.action.openPopup();
+  } catch (e) {
+    // openPopup may not be available in all contexts
+    // The pending connection will still be shown when user opens popup manually
+    console.log("[Background] Could not auto-open popup:", e);
+  }
+}
+
+/**
+ * Notify popup of events
+ */
+function notifyPopup(type: string, data: Record<string, unknown>) {
+  chrome.runtime.sendMessage({ type, ...data }).catch(() => {
+    // Popup might not be open
+  });
 }
 
 // Message types
 interface ExtensionMessage {
   type: string;
-  bunkerUri?: string;
+  host?: string;
   event?: UnsignedEvent;
-  relays?: string[];
 }
 
 /**
- * Message handler for content script communication
+ * Extract host from sender
+ */
+function getSenderHost(sender: chrome.runtime.MessageSender): string | null {
+  if (sender.url) {
+    try {
+      const url = new URL(sender.url);
+      return url.host;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Message handler
  */
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const message = msg as ExtensionMessage;
+
   const handleAsync = async () => {
     try {
       switch (message.type) {
-        case "connect":
-          return await connect(message.bunkerUri!);
+        // From content script
+        case "getPublicKey": {
+          const host = getSenderHost(sender);
+          if (!host) throw new Error("Could not determine site host");
+          return await getPublicKeyForSite(host);
+        }
 
-        case "startNostrConnect":
-          return await startNostrConnect(message.relays);
+        case "signEvent": {
+          const host = getSenderHost(sender);
+          if (!host) throw new Error("Could not determine site host");
+          return await signEventForSite(host, message.event!);
+        }
 
-        case "awaitNostrConnect":
-          return await awaitNostrConnect();
-
-        case "cancelNostrConnect":
-          cancelNostrConnect();
-          return { success: true };
-
-        case "disconnect":
-          await disconnect();
-          return { success: true };
-
+        // From popup
         case "getStatus":
           return getStatus();
 
-        case "getPublicKey":
-          return await getPublicKey();
+        case "removeSite":
+          await removeSite(message.host!);
+          return { success: true };
 
-        case "signEvent":
-          return await signEvent(message.event!);
+        case "cancelPendingConnection":
+          cancelPendingConnection();
+          return { success: true };
 
         default:
           throw new Error(`Unknown message type: ${message.type}`);
@@ -521,10 +677,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // Initialize on load
 init();
 
-// Keep service worker alive with periodic alarm
+// Keep service worker alive
 chrome.alarms.create("keepalive", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "keepalive") {
-    console.log("[Background] Keepalive tick");
+    // Reconnect any disconnected pools
+    for (const [host, session] of siteSessions.entries()) {
+      const pool = siteRelayPools.get(host);
+      if (!pool) {
+        connectSiteToRelays(host, session);
+      }
+    }
   }
 });

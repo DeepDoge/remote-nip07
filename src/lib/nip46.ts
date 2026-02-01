@@ -93,7 +93,7 @@ export async function nip44Encrypt(
   privkey: string,
   pubkey: string,
 ): Promise<string> {
-  const conversationKey = nip44.getConversationKey(privkey, pubkey);
+  const conversationKey = nip44.getConversationKey(hexToBytes(privkey), pubkey);
   return nip44.encrypt(plaintext, conversationKey);
 }
 
@@ -105,7 +105,7 @@ export async function nip44Decrypt(
   privkey: string,
   pubkey: string,
 ): Promise<string> {
-  const conversationKey = nip44.getConversationKey(privkey, pubkey);
+  const conversationKey = nip44.getConversationKey(hexToBytes(privkey), pubkey);
   return nip44.decrypt(payload, conversationKey);
 }
 

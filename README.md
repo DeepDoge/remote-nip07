@@ -13,16 +13,29 @@ use NIP-07-only websites without ever exposing your `nsec`.
 ```
 
 1. Website calls `window.nostr.getPublicKey()` or `window.nostr.signEvent()`
-2. Extension forwards request to Amber via NIP-46 (remote signing)
-3. Amber signs on your phone
-4. Extension returns the result to the website
+2. Extension detects the site and checks for an existing connection
+3. If no connection exists, a QR code popup is shown for Amber
+4. Amber signs on your phone
+5. Extension returns the result to the website
 
 ## Features
 
 - ⚡ **No keys in browser** - Your nsec stays on your phone
-- 🔒 **NIP-46 protocol** - Secure remote signing via relays
+- 🔒 **Per-site connections** - Each website gets its own Amber session
 - 📱 **Amber integration** - Works with the Amber Android app
 - 🌐 **NIP-07 compatible** - Works with any NIP-07 website
+- 🎯 **Site management** - View and remove connected sites from the popup
+
+## Per-Site Connections
+
+This extension creates a **separate NIP-46 session for each website (host)**.
+
+This means:
+
+- Each site appears as a separate connection in Amber
+- You can revoke access to individual sites
+- Sites cannot share signing sessions
+- The popup shows all connected sites with their pubkeys
 
 ## Supported Methods
 
@@ -34,97 +47,45 @@ use NIP-07-only websites without ever exposing your `nsec`.
 | `nip04.encrypt/decrypt` | ❌ Not supported |
 | `nip44.encrypt/decrypt` | ❌ Not supported |
 
-## Installation
-
-### Prerequisites
-
-- [Deno](https://deno.land/) 1.40+
-- Chrome/Chromium browser
-- [Amber](https://github.com/greenart7c3/Amber) on your Android phone
-
-### Build
-
-```bash
-# Install dependencies and build
-deno task build
-
-# Or watch for changes
-deno task build:watch
-```
-
-### Load Extension
-
-1. Open `chrome://extensions`
-2. Enable **Developer mode** (top right)
-3. Click **Load unpacked**
-4. Select the `./dist` folder
-
 ## Usage
 
-### Connect to Amber
+### First Connection
 
-1. Open Amber on your phone
-2. Go to **Settings** → **Nostr Connect**
-3. Tap **Create Connection** or copy your bunker URI
-4. Click the extension icon in Chrome
-5. Paste the bunker URI and click **Connect**
+1. Visit any NIP-07 website (e.g., Snort, Coracle, Nostrudel)
+2. The site calls `getPublicKey()` or attempts to sign
+3. A QR code popup automatically appears
+4. Scan the QR code with Amber on your phone
+5. Approve the connection in Amber
+6. You're connected! The site now has access.
 
-### Using Websites
+### Managing Sites
 
-Once connected, any website that uses NIP-07 will automatically work:
+1. Click the extension icon to open the popup
+2. See all connected sites with their pubkeys
+3. Click **Remove** to disconnect a site
+4. The site will need to reconnect next time
 
-- Signing requests will be forwarded to Amber
-- You'll get a notification on your phone to approve
-- The signed event is returned to the website
+### Reconnecting
 
-## Development
+If you remove a site or it expires:
 
-```bash
-# Type check
-deno task check
-
-# Format code
-deno task fmt
-
-# Lint
-deno task lint
-
-# Build with watch
-deno task build:watch
-```
-
-## Project Structure
-
-```
-src/
-├── background.ts     # Service worker - NIP-46 client
-├── content.ts        # Content script - bridges page ↔ background
-├── injected.ts       # Injected script - window.nostr provider
-├── popup.html        # Extension popup UI
-├── popup.ts          # Popup logic
-├── manifest.json     # Chrome extension manifest (v3)
-└── lib/
-    ├── nostr.ts      # Nostr types and utilities
-    ├── nip46.ts      # NIP-46 encryption and messages
-    └── relay.ts      # WebSocket relay pool
-```
+1. The next signing request from that site triggers a new QR code
+2. Scan with Amber to reconnect
 
 ## Technical Details
 
-### NIP-46 Flow
+### Per-Site NIP-46 Sessions
 
-1. Extension generates ephemeral keypair on first connect
-2. Sends `connect` request to Amber's pubkey via relay
-3. Amber approves connection and stores client pubkey
-4. All subsequent requests use NIP-44 encryption
+1. When a site first requests signing, extension generates a unique keypair
+2. A nostrconnect:// QR code is shown to the user
+3. User scans with Amber, creating a dedicated connection for that site
+4. Each site has its own ephemeral keypair and relay subscriptions
+5. Sessions are persisted to storage and restored on extension load
 
 ### Security
 
 - Private keys never touch the browser
-- Only session data (ephemeral keypair) is stored
-- Each site sees the same pubkey (Amber's user pubkey)
-- Connection can be revoked from Amber at any time
-
-## License
-
-MIT
+- Each site gets a unique ephemeral keypair
+- Sessions are isolated per-origin (host)
+- Connection can be revoked from extension popup or Amber
+- No shared state between sites

@@ -86,7 +86,7 @@ function convertBits(
 
 export function bech32Encode(hrp: string, data: Uint8Array): string {
   const values = convertBits(data, 8, 5, true);
-  let chk =
+  const chk =
     bech32Polymod([...bech32HrpExpand(hrp), ...values, 0, 0, 0, 0, 0, 0]) ^ 1;
   const checksum: number[] = [];
   for (let i = 0; i < 6; i++) {
