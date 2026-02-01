@@ -40,6 +40,7 @@ const btnDisconnect = document.getElementById(
 ) as HTMLButtonElement;
 
 let currentHost: string | null = null;
+let showingPendingQrForHost: string | null = null;
 
 /**
  * Initialize popup
@@ -95,6 +96,7 @@ async function updateCurrentSiteUI(status: StatusResponse) {
   stateConnected.style.display = "none";
   stateQR.style.display = "none";
   stateNotConnected.style.display = "none";
+  showingPendingQrForHost = null;
 
   if (!currentHost) {
     stateNotConnected.style.display = "block";
@@ -107,6 +109,7 @@ async function updateCurrentSiteUI(status: StatusResponse) {
   ) {
     stateQR.style.display = "block";
     showQRCode(status.pendingConnection.uri);
+    showingPendingQrForHost = currentHost;
     return;
   }
 
@@ -121,6 +124,15 @@ async function updateCurrentSiteUI(status: StatusResponse) {
   // Not connected
   stateNotConnected.style.display = "block";
 }
+
+// If the user closes the popup while a QR is being shown, cancel the pending
+// connection so a fresh login attempt can show the QR again.
+window.addEventListener("beforeunload", () => {
+  if (!showingPendingQrForHost) return;
+  chrome.runtime.sendMessage({ type: "cancelPendingConnection" }).catch(() => {
+    // Ignore errors if the background isn't reachable (e.g. shutdown)
+  });
+});
 
 /**
  * Show QR code

@@ -460,6 +460,14 @@ async function getPublicKeyForSite(host: string): Promise<string> {
   const existingPromise = pendingGetPubkeyPromises.get(host);
   if (existingPromise) {
     console.log("[Background] Reusing existing pending connection for", host);
+
+    // If the user previously closed the popup, re-open it so the QR is visible again.
+    // (Without this, subsequent getPublicKey() calls will just await the same promise
+    // and nothing will bring the QR back on screen.)
+    if (pendingConnection && pendingConnection.host === host) {
+      await openPopupWithQR(host, pendingConnection.uri);
+    }
+
     return existingPromise;
   }
 
