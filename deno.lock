@@ -1,0 +1,314 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@luca/esbuild-deno-loader@0.10.3": "0.10.3",
+    "jsr:@std/assert@~0.213.1": "0.213.1",
+    "jsr:@std/encoding@0.213": "0.213.1",
+    "jsr:@std/json@~0.213.1": "0.213.1",
+    "jsr:@std/jsonc@0.213": "0.213.1",
+    "jsr:@std/path@0.213": "0.213.1",
+    "npm:@types/chrome@*": "0.1.36",
+    "npm:@types/chrome@0.0.287": "0.0.287",
+    "npm:esbuild@*": "0.20.0",
+    "npm:esbuild@0.20.0": "0.20.0"
+  },
+  "jsr": {
+    "@luca/esbuild-deno-loader@0.10.3": {
+      "integrity": "32fc93f7e7f78060234fd5929a740668aab1c742b808c6048b57f9aaea514921",
+      "dependencies": [
+        "jsr:@std/encoding",
+        "jsr:@std/jsonc",
+        "jsr:@std/path"
+      ]
+    },
+    "@std/assert@0.213.1": {
+      "integrity": "24c28178b30c8e0782c18e8e94ea72b16282207569cdd10ffb9d1d26f2edebfe"
+    },
+    "@std/encoding@0.213.1": {
+      "integrity": "fcbb6928713dde941a18ca5db88ca1544d0755ec8fb20fe61e2dc8144b390c62"
+    },
+    "@std/json@0.213.1": {
+      "integrity": "f572b1de605d07c4a5602445dac54bfc51b1fb87a3710a17aed2608bfca54e68"
+    },
+    "@std/jsonc@0.213.1": {
+      "integrity": "5578f21aa583b7eb7317eed077ffcde47b294f1056bdbb9aacec407758637bfe",
+      "dependencies": [
+        "jsr:@std/assert",
+        "jsr:@std/json"
+      ]
+    },
+    "@std/path@0.213.1": {
+      "integrity": "f187bf278a172752e02fcbacf6bd78a335ed320d080a7ed3a5a59c3e88abc673",
+      "dependencies": [
+        "jsr:@std/assert"
+      ]
+    }
+  },
+  "npm": {
+    "@esbuild/aix-ppc64@0.20.0": {
+      "integrity": "sha512-fGFDEctNh0CcSwsiRPxiaqX0P5rq+AqE0SRhYGZ4PX46Lg1FNR6oCxJghf8YgY0WQEgQuh3lErUFE4KxLeRmmw==",
+      "os": ["aix"],
+      "cpu": ["ppc64"]
+    },
+    "@esbuild/android-arm64@0.20.0": {
+      "integrity": "sha512-aVpnM4lURNkp0D3qPoAzSG92VXStYmoVPOgXveAUoQBWRSuQzt51yvSju29J6AHPmwY1BjH49uR29oyfH1ra8Q==",
+      "os": ["android"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/android-arm@0.20.0": {
+      "integrity": "sha512-3bMAfInvByLHfJwYPJRlpTeaQA75n8C/QKpEaiS4HrFWFiJlNI0vzq/zCjBrhAYcPyVPG7Eo9dMrcQXuqmNk5g==",
+      "os": ["android"],
+      "cpu": ["arm"]
+    },
+    "@esbuild/android-x64@0.20.0": {
+      "integrity": "sha512-uK7wAnlRvjkCPzh8jJ+QejFyrP8ObKuR5cBIsQZ+qbMunwR8sbd8krmMbxTLSrDhiPZaJYKQAU5Y3iMDcZPhyQ==",
+      "os": ["android"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/darwin-arm64@0.20.0": {
+      "integrity": "sha512-AjEcivGAlPs3UAcJedMa9qYg9eSfU6FnGHJjT8s346HSKkrcWlYezGE8VaO2xKfvvlZkgAhyvl06OJOxiMgOYQ==",
+      "os": ["darwin"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/darwin-x64@0.20.0": {
+      "integrity": "sha512-bsgTPoyYDnPv8ER0HqnJggXK6RyFy4PH4rtsId0V7Efa90u2+EifxytE9pZnsDgExgkARy24WUQGv9irVbTvIw==",
+      "os": ["darwin"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/freebsd-arm64@0.20.0": {
+      "integrity": "sha512-kQ7jYdlKS335mpGbMW5tEe3IrQFIok9r84EM3PXB8qBFJPSc6dpWfrtsC/y1pyrz82xfUIn5ZrnSHQQsd6jebQ==",
+      "os": ["freebsd"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/freebsd-x64@0.20.0": {
+      "integrity": "sha512-uG8B0WSepMRsBNVXAQcHf9+Ko/Tr+XqmK7Ptel9HVmnykupXdS4J7ovSQUIi0tQGIndhbqWLaIL/qO/cWhXKyQ==",
+      "os": ["freebsd"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/linux-arm64@0.20.0": {
+      "integrity": "sha512-uTtyYAP5veqi2z9b6Gr0NUoNv9F/rOzI8tOD5jKcCvRUn7T60Bb+42NDBCWNhMjkQzI0qqwXkQGo1SY41G52nw==",
+      "os": ["linux"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/linux-arm@0.20.0": {
+      "integrity": "sha512-2ezuhdiZw8vuHf1HKSf4TIk80naTbP9At7sOqZmdVwvvMyuoDiZB49YZKLsLOfKIr77+I40dWpHVeY5JHpIEIg==",
+      "os": ["linux"],
+      "cpu": ["arm"]
+    },
+    "@esbuild/linux-ia32@0.20.0": {
+      "integrity": "sha512-c88wwtfs8tTffPaoJ+SQn3y+lKtgTzyjkD8NgsyCtCmtoIC8RDL7PrJU05an/e9VuAke6eJqGkoMhJK1RY6z4w==",
+      "os": ["linux"],
+      "cpu": ["ia32"]
+    },
+    "@esbuild/linux-loong64@0.20.0": {
+      "integrity": "sha512-lR2rr/128/6svngnVta6JN4gxSXle/yZEZL3o4XZ6esOqhyR4wsKyfu6qXAL04S4S5CgGfG+GYZnjFd4YiG3Aw==",
+      "os": ["linux"],
+      "cpu": ["loong64"]
+    },
+    "@esbuild/linux-mips64el@0.20.0": {
+      "integrity": "sha512-9Sycc+1uUsDnJCelDf6ZNqgZQoK1mJvFtqf2MUz4ujTxGhvCWw+4chYfDLPepMEvVL9PDwn6HrXad5yOrNzIsQ==",
+      "os": ["linux"],
+      "cpu": ["mips64el"]
+    },
+    "@esbuild/linux-ppc64@0.20.0": {
+      "integrity": "sha512-CoWSaaAXOZd+CjbUTdXIJE/t7Oz+4g90A3VBCHLbfuc5yUQU/nFDLOzQsN0cdxgXd97lYW/psIIBdjzQIwTBGw==",
+      "os": ["linux"],
+      "cpu": ["ppc64"]
+    },
+    "@esbuild/linux-riscv64@0.20.0": {
+      "integrity": "sha512-mlb1hg/eYRJUpv8h/x+4ShgoNLL8wgZ64SUr26KwglTYnwAWjkhR2GpoKftDbPOCnodA9t4Y/b68H4J9XmmPzA==",
+      "os": ["linux"],
+      "cpu": ["riscv64"]
+    },
+    "@esbuild/linux-s390x@0.20.0": {
+      "integrity": "sha512-fgf9ubb53xSnOBqyvWEY6ukBNRl1mVX1srPNu06B6mNsNK20JfH6xV6jECzrQ69/VMiTLvHMicQR/PgTOgqJUQ==",
+      "os": ["linux"],
+      "cpu": ["s390x"]
+    },
+    "@esbuild/linux-x64@0.20.0": {
+      "integrity": "sha512-H9Eu6MGse++204XZcYsse1yFHmRXEWgadk2N58O/xd50P9EvFMLJTQLg+lB4E1cF2xhLZU5luSWtGTb0l9UeSg==",
+      "os": ["linux"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/netbsd-x64@0.20.0": {
+      "integrity": "sha512-lCT675rTN1v8Fo+RGrE5KjSnfY0x9Og4RN7t7lVrN3vMSjy34/+3na0q7RIfWDAj0e0rCh0OL+P88lu3Rt21MQ==",
+      "os": ["netbsd"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/openbsd-x64@0.20.0": {
+      "integrity": "sha512-HKoUGXz/TOVXKQ+67NhxyHv+aDSZf44QpWLa3I1lLvAwGq8x1k0T+e2HHSRvxWhfJrFxaaqre1+YyzQ99KixoA==",
+      "os": ["openbsd"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/sunos-x64@0.20.0": {
+      "integrity": "sha512-GDwAqgHQm1mVoPppGsoq4WJwT3vhnz/2N62CzhvApFD1eJyTroob30FPpOZabN+FgCjhG+AgcZyOPIkR8dfD7g==",
+      "os": ["sunos"],
+      "cpu": ["x64"]
+    },
+    "@esbuild/win32-arm64@0.20.0": {
+      "integrity": "sha512-0vYsP8aC4TvMlOQYozoksiaxjlvUcQrac+muDqj1Fxy6jh9l9CZJzj7zmh8JGfiV49cYLTorFLxg7593pGldwQ==",
+      "os": ["win32"],
+      "cpu": ["arm64"]
+    },
+    "@esbuild/win32-ia32@0.20.0": {
+      "integrity": "sha512-p98u4rIgfh4gdpV00IqknBD5pC84LCub+4a3MO+zjqvU5MVXOc3hqR2UgT2jI2nh3h8s9EQxmOsVI3tyzv1iFg==",
+      "os": ["win32"],
+      "cpu": ["ia32"]
+    },
+    "@esbuild/win32-x64@0.20.0": {
+      "integrity": "sha512-NgJnesu1RtWihtTtXGFMU5YSE6JyyHPMxCwBZK7a6/8d31GuSo9l0Ss7w1Jw5QnKUawG6UEehs883kcXf5fYwg==",
+      "os": ["win32"],
+      "cpu": ["x64"]
+    },
+    "@types/chrome@0.0.287": {
+      "integrity": "sha512-wWhBNPNXZHwycHKNYnexUcpSbrihVZu++0rdp6GEk5ZgAglenLx+RwdEouh6FrHS0XQiOxSd62yaujM1OoQlZQ==",
+      "dependencies": [
+        "@types/filesystem",
+        "@types/har-format"
+      ]
+    },
+    "@types/chrome@0.1.36": {
+      "integrity": "sha512-BvHbuyGttYXnGt5Gpwa4769KIinKHY1iLjlAPrrMBS2GI9m/XNMPtdsq0NgQalyuUdxvlMN/0OyGw0shFVIoUQ==",
+      "dependencies": [
+        "@types/filesystem",
+        "@types/har-format"
+      ]
+    },
+    "@types/filesystem@0.0.36": {
+      "integrity": "sha512-vPDXOZuannb9FZdxgHnqSwAG/jvdGM8Wq+6N4D/d80z+D4HWH+bItqsZaVRQykAn6WEVeEkLm2oQigyHtgb0RA==",
+      "dependencies": [
+        "@types/filewriter"
+      ]
+    },
+    "@types/filewriter@0.0.33": {
+      "integrity": "sha512-xFU8ZXTw4gd358lb2jw25nxY9QAgqn2+bKKjKOYfNCzN4DKCFetK7sPtrlpg66Ywe3vWY9FNxprZawAh9wfJ3g=="
+    },
+    "@types/har-format@1.2.16": {
+      "integrity": "sha512-fluxdy7ryD3MV6h8pTfTYpy/xQzCFC7m89nOH9y94cNqJ1mDIDPut7MnRHI3F6qRmh/cT2fUjG1MLdCNb4hE9A=="
+    },
+    "esbuild@0.20.0": {
+      "integrity": "sha512-6iwE3Y2RVYCME1jLpBqq7LQWK3MW6vjV2bZy6gt/WrqkY+WE74Spyc0ThAOYpMtITvnjX09CrC6ym7A/m9mebA==",
+      "optionalDependencies": [
+        "@esbuild/aix-ppc64",
+        "@esbuild/android-arm",
+        "@esbuild/android-arm64",
+        "@esbuild/android-x64",
+        "@esbuild/darwin-arm64",
+        "@esbuild/darwin-x64",
+        "@esbuild/freebsd-arm64",
+        "@esbuild/freebsd-x64",
+        "@esbuild/linux-arm",
+        "@esbuild/linux-arm64",
+        "@esbuild/linux-ia32",
+        "@esbuild/linux-loong64",
+        "@esbuild/linux-mips64el",
+        "@esbuild/linux-ppc64",
+        "@esbuild/linux-riscv64",
+        "@esbuild/linux-s390x",
+        "@esbuild/linux-x64",
+        "@esbuild/netbsd-x64",
+        "@esbuild/openbsd-x64",
+        "@esbuild/sunos-x64",
+        "@esbuild/win32-arm64",
+        "@esbuild/win32-ia32",
+        "@esbuild/win32-x64"
+      ],
+      "scripts": true,
+      "bin": true
+    }
+  },
+  "redirects": {
+    "https://esm.sh/@noble/ciphers@^0.5.1/chacha?target=denonext": "https://esm.sh/@noble/ciphers@0.5.3/chacha?target=denonext",
+    "https://esm.sh/@noble/ciphers@^0.5.1/utils?target=denonext": "https://esm.sh/@noble/ciphers@0.5.3/utils?target=denonext"
+  },
+  "remote": {
+    "https://deno.land/std@0.220.0/assert/assert.ts": "bec068b2fccdd434c138a555b19a2c2393b71dfaada02b7d568a01541e67cdc5",
+    "https://deno.land/std@0.220.0/assert/assertion_error.ts": "9f689a101ee586c4ce92f52fa7ddd362e86434ffdf1f848e45987dc7689976b8",
+    "https://deno.land/std@0.220.0/fs/_get_file_info_type.ts": "da7bec18a7661dba360a1db475b826b18977582ce6fc9b25f3d4ee0403fe8cbd",
+    "https://deno.land/std@0.220.0/fs/_is_subdir.ts": "c68b309d46cc8568ed83c000f608a61bbdba0943b7524e7a30f9e450cf67eecd",
+    "https://deno.land/std@0.220.0/fs/_to_path_string.ts": "29bfc9c6c112254961d75cbf6ba814d6de5349767818eb93090cecfa9665591e",
+    "https://deno.land/std@0.220.0/fs/copy.ts": "dc0f68c4b6c3b090bfdb909387e309f6169b746bd713927c9507c9ef545d71f6",
+    "https://deno.land/std@0.220.0/fs/ensure_dir.ts": "dffff68de0d10799b5aa9e39dec4e327e12bbd29e762292193684542648c4aeb",
+    "https://deno.land/std@0.220.0/path/_common/assert_path.ts": "dbdd757a465b690b2cc72fc5fb7698c51507dec6bfafce4ca500c46b76ff7bd8",
+    "https://deno.land/std@0.220.0/path/_common/basename.ts": "569744855bc8445f3a56087fd2aed56bdad39da971a8d92b138c9913aecc5fa2",
+    "https://deno.land/std@0.220.0/path/_common/constants.ts": "dc5f8057159f4b48cd304eb3027e42f1148cf4df1fb4240774d3492b5d12ac0c",
+    "https://deno.land/std@0.220.0/path/_common/from_file_url.ts": "d672bdeebc11bf80e99bf266f886c70963107bdd31134c4e249eef51133ceccf",
+    "https://deno.land/std@0.220.0/path/_common/normalize.ts": "684df4aa71a04bbcc346c692c8485594fc8a90b9408dfbc26ff32cf3e0c98cc8",
+    "https://deno.land/std@0.220.0/path/_common/normalize_string.ts": "33edef773c2a8e242761f731adeb2bd6d683e9c69e4e3d0092985bede74f4ac3",
+    "https://deno.land/std@0.220.0/path/_common/strip_trailing_separators.ts": "7024a93447efcdcfeaa9339a98fa63ef9d53de363f1fbe9858970f1bba02655a",
+    "https://deno.land/std@0.220.0/path/_os.ts": "8fb9b90fb6b753bd8c77cfd8a33c2ff6c5f5bc185f50de8ca4ac6a05710b2c15",
+    "https://deno.land/std@0.220.0/path/basename.ts": "5d341aadb7ada266e2280561692c165771d071c98746fcb66da928870cd47668",
+    "https://deno.land/std@0.220.0/path/constants.ts": "0c206169ca104938ede9da48ac952de288f23343304a1c3cb6ec7625e7325f36",
+    "https://deno.land/std@0.220.0/path/from_file_url.ts": "911833ae4fd10a1c84f6271f36151ab785955849117dc48c6e43b929504ee069",
+    "https://deno.land/std@0.220.0/path/join.ts": "ae2ec5ca44c7e84a235fd532e4a0116bfb1f2368b394db1c4fb75e3c0f26a33a",
+    "https://deno.land/std@0.220.0/path/posix/_util.ts": "1e3937da30f080bfc99fe45d7ed23c47dd8585c5e473b2d771380d3a6937cf9d",
+    "https://deno.land/std@0.220.0/path/posix/basename.ts": "d2fa5fbbb1c5a3ab8b9326458a8d4ceac77580961b3739cd5bfd1d3541a3e5f0",
+    "https://deno.land/std@0.220.0/path/posix/from_file_url.ts": "951aee3a2c46fd0ed488899d024c6352b59154c70552e90885ed0c2ab699bc40",
+    "https://deno.land/std@0.220.0/path/posix/join.ts": "7fc2cb3716aa1b863e990baf30b101d768db479e70b7313b4866a088db016f63",
+    "https://deno.land/std@0.220.0/path/posix/normalize.ts": "baeb49816a8299f90a0237d214cef46f00ba3e95c0d2ceb74205a6a584b58a91",
+    "https://deno.land/std@0.220.0/path/posix/resolve.ts": "08b699cfeee10cb6857ccab38fa4b2ec703b0ea33e8e69964f29d02a2d5257cf",
+    "https://deno.land/std@0.220.0/path/resolve.ts": "a6f977bdb4272e79d8d0ed4333e3d71367cc3926acf15ac271f1d059c8494d8d",
+    "https://deno.land/std@0.220.0/path/windows/_util.ts": "d5f47363e5293fced22c984550d5e70e98e266cc3f31769e1710511803d04808",
+    "https://deno.land/std@0.220.0/path/windows/basename.ts": "e2dbf31d1d6385bfab1ce38c333aa290b6d7ae9e0ecb8234a654e583cf22f8fe",
+    "https://deno.land/std@0.220.0/path/windows/from_file_url.ts": "ced2d587b6dff18f963f269d745c4a599cf82b0c4007356bd957cb4cb52efc01",
+    "https://deno.land/std@0.220.0/path/windows/join.ts": "8d03530ab89195185103b7da9dfc6327af13eabdcd44c7c63e42e27808f50ecf",
+    "https://deno.land/std@0.220.0/path/windows/normalize.ts": "78126170ab917f0ca355a9af9e65ad6bfa5be14d574c5fb09bb1920f52577780",
+    "https://deno.land/std@0.220.0/path/windows/resolve.ts": "8dae1dadfed9d46ff46cc337c9525c0c7d959fb400a6308f34595c45bdca1972",
+    "https://esm.sh/@noble/ciphers@0.5.3/chacha": "a242dfef67ab348e08fb25895600a3d7aaa53b263d36d30ab49d892033071bc9",
+    "https://esm.sh/@noble/ciphers@0.5.3/chacha?target=denonext": "a242dfef67ab348e08fb25895600a3d7aaa53b263d36d30ab49d892033071bc9",
+    "https://esm.sh/@noble/ciphers@0.5.3/denonext/_poly1305.mjs": "11a1afafcc38d403e3e18d6519677e76869111c5caf0f986df560d5b6656cd39",
+    "https://esm.sh/@noble/ciphers@0.5.3/denonext/chacha.mjs": "454f86b96d4d98d02edef7c1a09a108b0c04d5a75f409d0a1eaa479ab99981e9",
+    "https://esm.sh/@noble/ciphers@0.5.3/denonext/crypto.mjs": "83353f66e2523d265d6d7dddd54678af56886aea2a70def0f2ac28e54cc05a65",
+    "https://esm.sh/@noble/ciphers@0.5.3/denonext/esm/_arx.mjs": "fc9bb4a50311790161b709849c145c2bc5a51aea66babef9d43695a3cf99ff70",
+    "https://esm.sh/@noble/ciphers@0.5.3/denonext/esm/_assert.mjs": "42a0a7c9d61fcb4b7c068dfc24649d387ce1a2b4591cc8beec44d34bedd76d9b",
+    "https://esm.sh/@noble/ciphers@0.5.3/denonext/utils.mjs": "7730258bbdbd7e602989168d8d5864c65c3758ba15b77bd678c89d98b61ee53d",
+    "https://esm.sh/@noble/ciphers@0.5.3/denonext/webcrypto.mjs": "f24685f183bcc59a201ec14818badc2f9539449ddc3a7acc0bd32ced42fdf6e1",
+    "https://esm.sh/@noble/ciphers@0.5.3/utils?target=denonext": "69190c197a8e2d537cbdf85de609e835ca1b661ee3a950663badba9daa5af6f8",
+    "https://esm.sh/@noble/ciphers@0.5.3/webcrypto": "7e257d6c0859c4c938a054d36f5b3ec064aa76a977ab1fdbf37862d27e6ad1e4",
+    "https://esm.sh/@noble/curves@1.2.0/denonext/_shortw_utils.mjs": "f727d962e20cbedf734b164816693c8c93675ed6c8c86ec794377277f0b5c0e2",
+    "https://esm.sh/@noble/curves@1.2.0/denonext/abstract/curve.mjs": "f050d7fa7ebc91291d66625fc2711513bdadbeaec0920b0f76be0c224fa575d8",
+    "https://esm.sh/@noble/curves@1.2.0/denonext/abstract/hash-to-curve.mjs": "238b612981445c9a0d81cec2737bb055209c240204d75925b7f6ff2ef1bc79e9",
+    "https://esm.sh/@noble/curves@1.2.0/denonext/abstract/modular.mjs": "8a063ac2d423b5878a4f33d0a6ad1779e844de4fc21ac490aed90446b0101b25",
+    "https://esm.sh/@noble/curves@1.2.0/denonext/abstract/utils.mjs": "9da76ddc911df09a5a3ab32e1a713ee1963f93b165034fad38930a5ad0b5bacb",
+    "https://esm.sh/@noble/curves@1.2.0/denonext/abstract/weierstrass.mjs": "fea31f974ba596063e4ba5e610f25842c30ea0c3411661a90459500bf1bfc3de",
+    "https://esm.sh/@noble/curves@1.2.0/denonext/secp256k1.mjs": "7e18e920d7444dbe15748ef15ce6f304c0cfc797e271907ec5b0a8fa62f85558",
+    "https://esm.sh/@noble/curves@1.4.0/denonext/_shortw_utils.mjs": "7d29ed6c740d12fa565209df34fd084ee26db7679cb8287e377c1a0d9dd64c44",
+    "https://esm.sh/@noble/curves@1.4.0/denonext/abstract/curve.mjs": "3c642bf94b5972991af3d13f987f8011b284da9b0edf3a0041dbef379f5418ad",
+    "https://esm.sh/@noble/curves@1.4.0/denonext/abstract/hash-to-curve.mjs": "9fcf94e632f012649a39412d433d04ca7354e3b2669f5b0d074bab58e303c668",
+    "https://esm.sh/@noble/curves@1.4.0/denonext/abstract/modular.mjs": "add6ca69b40e26f45d2e8fec7f16fa802836c731e89f337d59f38dcbffda01b2",
+    "https://esm.sh/@noble/curves@1.4.0/denonext/abstract/utils.mjs": "5aa8f3e4b3c806a4fee8a9c95d17ebb8df02b92e8f68f18517227a67d84b9f67",
+    "https://esm.sh/@noble/curves@1.4.0/denonext/abstract/weierstrass.mjs": "8ecce4bb380fd9e55532e84017d40115bf557a5400f9baf6558739682e80bc7f",
+    "https://esm.sh/@noble/curves@1.4.0/denonext/secp256k1.mjs": "d58831d4f81b54330db60c69a6380d15e3f6e5e6462cf5161a5b59ad1a65eaec",
+    "https://esm.sh/@noble/curves@1.4.0/secp256k1": "5cfe4f86fefce2073405431419ad339a75ac8d11986d5abdb1405d2025579332",
+    "https://esm.sh/@noble/hashes@1.3.1/denonext/_assert.mjs": "06fd517f5ef1276606429a2cf23640da0954b45809b18cecfd452c0473f86195",
+    "https://esm.sh/@noble/hashes@1.3.1/denonext/_sha2.mjs": "fdf1776b79fb507afa103e31d43c6ce03ef20827fa106c72fce05497bd3a0bf6",
+    "https://esm.sh/@noble/hashes@1.3.1/denonext/crypto.mjs": "fb2c01d38eb50d007e9e99b85cbc4df219522e4b6f1d2866b2130479b3ea6a9b",
+    "https://esm.sh/@noble/hashes@1.3.1/denonext/hkdf.mjs": "d3d353dec7d20d405bf9551fbe14c0ed370d27c0ee96e6362369f2635368313d",
+    "https://esm.sh/@noble/hashes@1.3.1/denonext/hmac.mjs": "d338cf8684075cc225830373190f0f1625b8abacaab62db52493755f1dc208a1",
+    "https://esm.sh/@noble/hashes@1.3.1/denonext/sha256.mjs": "507fe3630c3d20f731c4912b2593bf9354f6157211c0956e9c306658816336aa",
+    "https://esm.sh/@noble/hashes@1.3.1/denonext/utils.mjs": "e69b2607f1801f1b9c824132c53566e59715ea5196672c1f0847ed8d6c6e81da",
+    "https://esm.sh/@noble/hashes@1.3.2/denonext/_assert.mjs": "61d0ca75a9350e4eb55bc202c0409a03203182b8f15ef849bbe9317a16024365",
+    "https://esm.sh/@noble/hashes@1.3.2/denonext/_sha2.mjs": "7c5c39b6681fe7fc36b9263a78c8434604bbc95fd9bb3f011440ee31378828f6",
+    "https://esm.sh/@noble/hashes@1.3.2/denonext/crypto.mjs": "ed0ec2ee968c1c93626f7d0f00561c250e01dfdbf05522e03b664dbcca728999",
+    "https://esm.sh/@noble/hashes@1.3.2/denonext/hmac.mjs": "bb072d2361b24f3e3d3185df33134fa43c24e070d9179ca5375ca154e952d6fd",
+    "https://esm.sh/@noble/hashes@1.3.2/denonext/sha256.mjs": "47f48d3b789ff9b4cdd4f5c96366f8bc5e741f9bcdfce696f1d80b1ad9a3c4ec",
+    "https://esm.sh/@noble/hashes@1.3.2/denonext/utils.mjs": "a55118e868b36ccab9ffe70d459c80bf4eb1db04206779b07f3938ab07806bf9",
+    "https://esm.sh/@noble/hashes@1.4.0/denonext/_assert.mjs": "7695fe9689e3799e477b2e5bf8408a142bbfdf7d714d13214f5a5c82e84251e3",
+    "https://esm.sh/@noble/hashes@1.4.0/denonext/_md.mjs": "1a4204591ee5255fba4e7c20a38156a522d448111cfb7713558c5266ecc5b3f2",
+    "https://esm.sh/@noble/hashes@1.4.0/denonext/crypto.mjs": "fe23c9fadbbbdc205707e045b292d697448c1527874a9654850cb414aaa24d97",
+    "https://esm.sh/@noble/hashes@1.4.0/denonext/hmac.mjs": "72cf70bbec2979bc3370e4d0808b54592f8477867d0145ed35394cbcbc0eb080",
+    "https://esm.sh/@noble/hashes@1.4.0/denonext/sha256.mjs": "ed8ff11f4c722e50d18c13c7d8695a8927ba45e905af6fa2bd98ae3b0dc926a8",
+    "https://esm.sh/@noble/hashes@1.4.0/denonext/utils.mjs": "e77ff6103db0b16440296b74be9a7ab12c96b0572b6fe0a60b8ae92f5b6e9c1b",
+    "https://esm.sh/@noble/hashes@1.4.0/sha256": "be4b1f62855f75d41a2d10ef639862e672877cc0d72c21f986afb6c90f31ac83",
+    "https://esm.sh/@noble/secp256k1@2.1.0": "07910d690f9d1b5a800573428be03fb5cf4cc95cc6827dded2650043af0d3b93",
+    "https://esm.sh/@noble/secp256k1@2.1.0/denonext/secp256k1.mjs": "2bcb9c87eaee20a84eb7e88e942710163617b958d49c8372dba185b603ec6f7d",
+    "https://esm.sh/@scure/base@1.1.1/denonext/base.mjs": "7f28c080a490b258710f774ae40a9e12634876ab026b1b2d461682da13eb4490",
+    "https://esm.sh/nostr-tools@2.7.0/denonext/nip44.mjs": "df0fcde51339ffce2a680dc43981482ea487be6b8ebdda1265e9b866b2c28c8c",
+    "https://esm.sh/nostr-tools@2.7.0/nip44": "7ef5765bec1bd2cc4113194501414bb330a71da24d5dbdf8c3d9ee2ee1a27ada"
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:@types/chrome@0.0.287"
+    ]
+  }
+}

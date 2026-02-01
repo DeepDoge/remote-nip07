@@ -1,0 +1,27 @@
+{
+  "name": "@remote-nip07/extension",
+  "version": "0.1.0",
+  "exports": "./src/background.ts",
+  "tasks": {
+    "build": "deno task build:clean && deno task build:bundle && deno task build:static",
+    "build:clean": "rm -rf dist && mkdir -p dist/icons dist/lib",
+    "build:bundle": "deno bundle --platform browser --outdir dist src/background.ts src/content.ts src/injected.ts src/popup.ts",
+    "build:static": "cp src/manifest.json src/popup.html dist/ && cp src/icons/* dist/icons/ && curl -s https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js -o dist/lib/qrcode.min.js",
+    "check": "deno check src/**/*.ts",
+    "fmt": "deno fmt",
+    "lint": "deno lint"
+  },
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "strict": true,
+    "noImplicitAny": false,
+    "types": ["npm:@types/chrome@0.0.287"]
+  },
+  "imports": {
+    "@noble/curves/secp256k1": "https://esm.sh/@noble/curves@1.4.0/secp256k1",
+    "@noble/hashes/": "https://esm.sh/@noble/hashes@1.4.0/",
+    "nostr-tools/nip44": "https://esm.sh/nostr-tools@2.7.0/nip44",
+    "qrcode": "https://esm.sh/qrcode@1.5.3"
+  },
+  "exclude": ["dist/"]
+}
