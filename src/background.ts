@@ -62,7 +62,12 @@ async function init() {
     if (storedSites) {
       for (const [host, session] of Object.entries(storedSites)) {
         siteSessions.set(host, session);
-        await connectSiteToRelays(host, session);
+        // Restore in-memory session state immediately so requests arriving right
+        // after service worker startup don't trigger a fresh QR flow.
+        // Relay reconnection can happen in the background.
+        connectSiteToRelays(host, session).catch((e) => {
+          console.error("[Background] Failed to reconnect relays for", host, e);
+        });
       }
       console.log("[Background] Restored", siteSessions.size, "site sessions");
     }
@@ -70,6 +75,10 @@ async function init() {
     console.error("[Background] Failed to restore sessions:", e);
   }
 }
+
+// Kick off initialization as soon as the service worker loads.
+// Any message handling should await this before deciding whether to show a QR.
+const initPromise = init();
 
 /**
  * Connect a site to its relays and subscribe for responses
@@ -243,23 +252,41 @@ async function completeConnection() {
       (evt) => handleRelayEvent(host, evt),
     );
 
-    await saveSessions();
+    // Resolve the pending promise and clear pending state first so the UI
+    // doesn't get stuck showing a QR code if persistence/notification fails.
+    clearTimeout(pendingConnection.timeout);
+    pendingConnection.resolve(pubkey as string);
+    pendingConnection = null;
 
-    // Notify popup
+    // Best-effort persistence/notification
+    saveSessions().catch((e) => {
+      console.error("[Background] Failed to save sessions:", e);
+    });
+
     notifyPopup("connectionComplete", {
       host,
       pubkey: pubkey as string,
     });
 
-    // Resolve the pending promise
-    clearTimeout(pendingConnection.timeout);
-    pendingConnection.resolve(pubkey as string);
-    pendingConnection = null;
-
     console.log("[Background] Site connected:", host, "pubkey:", pubkey);
   } catch (e) {
     console.error("[Background] Failed to complete connection:", e);
     notifyPopup("connectionFailed", { error: String(e) });
+
+    // Ensure we don't leave a stale pendingConnection hanging around.
+    if (pendingConnection) {
+      try {
+        clearTimeout(pendingConnection.timeout);
+        pendingConnection.relayPool.close();
+        pendingConnection.reject(
+          e instanceof Error ? e : new Error(String(e)),
+        );
+      } catch {
+        // Ignore cleanup errors
+      } finally {
+        pendingConnection = null;
+      }
+    }
   }
 }
 
@@ -453,6 +480,11 @@ async function getPublicKeyForSite(host: string): Promise<string> {
   // Already connected?
   const session = siteSessions.get(host);
   if (session) {
+    // Service workers can lose in-memory relay pools between activations.
+    // If the session exists but the pool doesn't, reconnect.
+    if (!siteRelayPools.get(host)) {
+      await connectSiteToRelays(host, session);
+    }
     return session.userPubkey;
   }
 
@@ -568,9 +600,10 @@ function getStatus(): {
 
   return {
     sites,
-    pendingConnection: pendingConnection
-      ? { host: pendingConnection.host, uri: pendingConnection.uri }
-      : null,
+    pendingConnection:
+      pendingConnection && !siteSessions.has(pendingConnection.host)
+        ? { host: pendingConnection.host, uri: pendingConnection.uri }
+        : null,
   };
 }
 
@@ -640,6 +673,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   const handleAsync = async () => {
     try {
+      await initPromise;
       switch (message.type) {
         // From content script
         case "getPublicKey": {
@@ -682,19 +716,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true; // Keep channel open for async response
 });
 
-// Initialize on load
-init();
-
 // Keep service worker alive
 chrome.alarms.create("keepalive", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "keepalive") {
-    // Reconnect any disconnected pools
-    for (const [host, session] of siteSessions.entries()) {
-      const pool = siteRelayPools.get(host);
-      if (!pool) {
-        connectSiteToRelays(host, session);
-      }
-    }
+    initPromise
+      .then(() => {
+        // Reconnect any disconnected pools
+        for (const [host, session] of siteSessions.entries()) {
+          const pool = siteRelayPools.get(host);
+          if (!pool) {
+            connectSiteToRelays(host, session).catch(() => {});
+          }
+        }
+      })
+      .catch(() => {});
   }
 });

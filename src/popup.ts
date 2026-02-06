@@ -103,6 +103,26 @@ async function updateCurrentSiteUI(status: StatusResponse) {
     return;
   }
 
+  // Prefer showing the connected state if we have a session for this host.
+  // This avoids a confusing UX if a stale pendingConnection exists.
+  const siteSession = status.sites[currentHost];
+  if (siteSession) {
+    stateConnected.style.display = "block";
+    connectedPubkeyEl.textContent = truncatePubkey(siteSession.pubkey);
+
+    // Best-effort cleanup: if the background still thinks a QR is pending for a
+    // host that is already connected, cancel it.
+    if (
+      status.pendingConnection && status.pendingConnection.host === currentHost
+    ) {
+      chrome.runtime
+        .sendMessage({ type: "cancelPendingConnection" })
+        .catch(() => {});
+    }
+
+    return;
+  }
+
   // Check if there's a pending connection for this host
   if (
     status.pendingConnection && status.pendingConnection.host === currentHost
@@ -110,14 +130,6 @@ async function updateCurrentSiteUI(status: StatusResponse) {
     stateQR.style.display = "block";
     showQRCode(status.pendingConnection.uri);
     showingPendingQrForHost = currentHost;
-    return;
-  }
-
-  // Check if this site is connected
-  const siteSession = status.sites[currentHost];
-  if (siteSession) {
-    stateConnected.style.display = "block";
-    connectedPubkeyEl.textContent = truncatePubkey(siteSession.pubkey);
     return;
   }
 
