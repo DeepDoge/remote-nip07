@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Remote NIP-07",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "NIP-07 signer that bridges to Amber via NIP-46",
   "permissions": [
     "storage",
