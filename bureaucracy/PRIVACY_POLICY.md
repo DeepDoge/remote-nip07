@@ -6,10 +6,11 @@ information to any service operated by us -- in fact, we don't even have a
 server anywhere, it's just an extension installed in your browser.
 
 The only places **Remote NIP-07** sends information to are the Nostr relay
-servers used for NIP-46 communication (by default `wss://relay.nsec.app`). These
-relays facilitate the signing protocol between this extension and your remote
-signer app (such as Amber). The extension assumes these relays are public
-infrastructure you choose to use.
+servers used for NIP-46 communication (by default `wss://relay.nsec.app`,
+`wss://relay.damus.io`, `wss://nostr-01.yakihonne.com`,
+`wss://relay.primal.net`). These relays facilitate the signing protocol between
+this extension and your remote signer app (such as Amber). The extension assumes
+these relays are public infrastructure you choose to use.
 
 **Remote NIP-07** stores only the information necessary to maintain your signing
 sessions:

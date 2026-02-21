@@ -47,7 +47,12 @@ const pendingGetPubkeyPromises: Map<string, Promise<string>> = new Map();
 const STORAGE_KEY_SITES = "site_sessions";
 
 // Default relay for nostrconnect
-const DEFAULT_RELAYS = ["wss://relay.nsec.app"];
+const DEFAULT_RELAYS = [
+  "wss://relay.nsec.app",
+  "wss://relay.damus.io",
+  "wss://nostr-01.yakihonne.com",
+  "wss://relay.primal.net",
+];
 
 /**
  * Initialize on startup - restore sessions if available
