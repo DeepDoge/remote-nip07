@@ -1,7 +1,6 @@
 # Remote NIP-07
 
-A Chrome extension that acts as a **NIP-07 → NIP-46 bridge**, allowing you to
-use NIP-07-only websites without ever exposing your `nsec`.
+A browser extension bridging NIP-07 to NIP-46. Let's you connect to NIP-07 only sites with NIP-46.
 
 ## How It Works
 
