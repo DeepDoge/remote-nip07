@@ -88,3 +88,7 @@ If you remove a site or it expires:
 - Sessions are isolated per-origin (host)
 - Connection can be revoked from extension popup or Amber
 - No shared state between sites
+
+## License
+
+[GPL v2](LICENSE)
