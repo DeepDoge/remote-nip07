@@ -38,13 +38,13 @@ This means:
 
 ## Supported Methods
 
-| Method                  | Status           |
-| ----------------------- | ---------------- |
-| `getPublicKey()`        | ✅ Supported     |
-| `signEvent(event)`      | ✅ Supported     |
+| Method                  | Status       |
+| ----------------------- | ------------ |
+| `getPublicKey()`        | ✅ Supported |
+| `signEvent(event)`      | ✅ Supported |
 | `getRelays()`           | ⚠️ Returns empty |
-| `nip04.encrypt/decrypt` | ❌ Not supported |
-| `nip44.encrypt/decrypt` | ❌ Not supported |
+| `nip04.encrypt/decrypt` | ✅ Supported |
+| `nip44.encrypt/decrypt` | ✅ Supported |
 
 ## Usage
 

@@ -30,7 +30,7 @@ window.addEventListener("message", async (event) => {
       case "signEvent":
         result = await chrome.runtime.sendMessage({
           type: "signEvent",
-          event: params[0],
+          event: params.event,
         });
         break;
 
@@ -40,11 +40,41 @@ window.addEventListener("message", async (event) => {
         break;
 
       case "nip04.encrypt":
+        result = await chrome.runtime.sendMessage({
+          type: "nip04.encrypt",
+          peer: params.peer,
+          plaintext: params.plaintext,
+        });
+        break;
+
       case "nip04.decrypt":
+        result = await chrome.runtime.sendMessage({
+          type: "nip04.decrypt",
+          peer: params.peer,
+          ciphertext: params.ciphertext,
+        });
+        break;
+
       case "nip44.encrypt":
+        result = await chrome.runtime.sendMessage({
+          type: "nip44.encrypt",
+          peer: params.peer,
+          plaintext: params.plaintext,
+        });
+        break;
+
       case "nip44.decrypt":
-        // Not supported - throw error
-        throw new Error(`${method} is not supported by this signer`);
+        result = await chrome.runtime.sendMessage({
+          type: "nip44.decrypt",
+          peer: params.peer,
+          ciphertext: params.ciphertext,
+        });
+        break;
+
+      case "replaceURL":
+        // Not handled by background, return false
+        result = false;
+        break;
 
       default:
         throw new Error(`Unknown method: ${method}`);

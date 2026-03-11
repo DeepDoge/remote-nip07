@@ -584,6 +584,126 @@ async function signEventForSite(
 }
 
 /**
+ * NIP-04 encrypt for a site
+ */
+async function nip04EncryptForSite(
+  host: string,
+  peer: string,
+  plaintext: string,
+): Promise<string> {
+  const session = siteSessions.get(host);
+  const relayPool = siteRelayPools.get(host);
+
+  if (!session || !relayPool) {
+    await getPublicKeyForSite(host);
+    const newSession = siteSessions.get(host);
+    const newPool = siteRelayPools.get(host);
+    if (!newSession || !newPool) {
+      throw new Error("Failed to connect");
+    }
+    return sendSiteRequest(newSession.host, newSession, newPool, "nip04_encrypt", [
+      peer,
+      plaintext,
+    ]) as Promise<string>;
+  }
+
+  return sendSiteRequest(host, session, relayPool, "nip04_encrypt", [
+    peer,
+    plaintext,
+  ]) as Promise<string>;
+}
+
+/**
+ * NIP-04 decrypt for a site
+ */
+async function nip04DecryptForSite(
+  host: string,
+  peer: string,
+  ciphertext: string,
+): Promise<string> {
+  const session = siteSessions.get(host);
+  const relayPool = siteRelayPools.get(host);
+
+  if (!session || !relayPool) {
+    await getPublicKeyForSite(host);
+    const newSession = siteSessions.get(host);
+    const newPool = siteRelayPools.get(host);
+    if (!newSession || !newPool) {
+      throw new Error("Failed to connect");
+    }
+    return sendSiteRequest(newSession.host, newSession, newPool, "nip04_decrypt", [
+      peer,
+      ciphertext,
+    ]) as Promise<string>;
+  }
+
+  return sendSiteRequest(host, session, relayPool, "nip04_decrypt", [
+    peer,
+    ciphertext,
+  ]) as Promise<string>;
+}
+
+/**
+ * NIP-44 encrypt for a site
+ */
+async function nip44EncryptForSite(
+  host: string,
+  peer: string,
+  plaintext: string,
+): Promise<string> {
+  const session = siteSessions.get(host);
+  const relayPool = siteRelayPools.get(host);
+
+  if (!session || !relayPool) {
+    await getPublicKeyForSite(host);
+    const newSession = siteSessions.get(host);
+    const newPool = siteRelayPools.get(host);
+    if (!newSession || !newPool) {
+      throw new Error("Failed to connect");
+    }
+    return sendSiteRequest(newSession.host, newSession, newPool, "nip44_encrypt", [
+      peer,
+      plaintext,
+    ]) as Promise<string>;
+  }
+
+  return sendSiteRequest(host, session, relayPool, "nip44_encrypt", [
+    peer,
+    plaintext,
+  ]) as Promise<string>;
+}
+
+/**
+ * NIP-44 decrypt for a site
+ */
+async function nip44DecryptForSite(
+  host: string,
+  peer: string,
+  ciphertext: string,
+): Promise<string> {
+  const session = siteSessions.get(host);
+  const relayPool = siteRelayPools.get(host);
+
+  if (!session || !relayPool) {
+    await getPublicKeyForSite(host);
+    const newSession = siteSessions.get(host);
+    const newPool = siteRelayPools.get(host);
+    if (!newSession || !newPool) {
+      throw new Error("Failed to connect");
+    }
+    return sendSiteRequest(newSession.host, newSession, newPool, "nip44_decrypt", [
+      peer,
+      ciphertext,
+    ]) as Promise<string>;
+  }
+
+  return sendSiteRequest(host, session, relayPool, "nip44_decrypt", [
+    peer,
+    ciphertext,
+  ]) as Promise<string>;
+}
+
+/**
  * Get status for popup
  */
 function getStatus(): {
@@ -653,6 +773,9 @@ interface ExtensionMessage {
   type: string;
   host?: string;
   event?: UnsignedEvent;
+  peer?: string;
+  plaintext?: string;
+  ciphertext?: string;
 }
 
 /**
@@ -691,6 +814,30 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           const host = getSenderHost(sender);
           if (!host) throw new Error("Could not determine site host");
           return await signEventForSite(host, message.event!);
+        }
+
+        case "nip04.encrypt": {
+          const host = getSenderHost(sender);
+          if (!host) throw new Error("Could not determine site host");
+          return await nip04EncryptForSite(host, message.peer!, message.plaintext!);
+        }
+
+        case "nip04.decrypt": {
+          const host = getSenderHost(sender);
+          if (!host) throw new Error("Could not determine site host");
+          return await nip04DecryptForSite(host, message.peer!, message.ciphertext!);
+        }
+
+        case "nip44.encrypt": {
+          const host = getSenderHost(sender);
+          if (!host) throw new Error("Could not determine site host");
+          return await nip44EncryptForSite(host, message.peer!, message.plaintext!);
+        }
+
+        case "nip44.decrypt": {
+          const host = getSenderHost(sender);
+          if (!host) throw new Error("Could not determine site host");
+          return await nip44DecryptForSite(host, message.peer!, message.ciphertext!);
         }
 
         // From popup

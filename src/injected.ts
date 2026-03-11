@@ -1,151 +1,147 @@
 /**
  * Injected Script - runs in page context
  * Exposes window.nostr (NIP-07 interface)
+ *
+ * Mirrors the nos2x provider shape so sites that access internal
+ * properties like _requests, _pubkey, or _call() keep working.
  */
 
-interface UnsignedEvent {
-  created_at?: number;
-  kind: number;
-  tags: string[][];
-  content: string;
-}
+// deno-lint-ignore no-explicit-any
+(window as any).nostr = {
+  _requests: {} as Record<
+    string,
+    { resolve: (v: unknown) => void; reject: (e: Error) => void }
+  >,
+  _pubkey: null as string | null,
 
-interface SignedEvent extends UnsignedEvent {
-  id: string;
-  pubkey: string;
-  sig: string;
-  created_at: number;
-}
+  async getPublicKey(): Promise<string> {
+    // deno-lint-ignore no-explicit-any
+    const self = (window as any).nostr;
+    if (self._pubkey) return self._pubkey;
+    self._pubkey = await self._call("getPublicKey", {});
+    return self._pubkey;
+  },
 
-// Pending requests waiting for response from content script
-const pendingRequests: Map<
-  string,
-  { resolve: (v: unknown) => void; reject: (e: Error) => void }
-> = new Map();
+  async signEvent(event: Record<string, unknown>) {
+    // Ensure created_at is set
+    if (!event.created_at) {
+      event.created_at = Math.floor(Date.now() / 1000);
+    }
+    // deno-lint-ignore no-explicit-any
+    return (window as any).nostr._call("signEvent", { event });
+  },
 
-// Generate unique request IDs
-let requestId = 0;
-function nextRequestId(): string {
-  return `nip07-${Date.now()}-${++requestId}`;
-}
+  async getRelays(): Promise<
+    Record<string, { read: boolean; write: boolean }>
+  > {
+    return {};
+  },
 
-// Send request to content script and wait for response
-function sendRequest<T>(method: string, params: unknown[] = []): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const id = nextRequestId();
+  nip04: {
+    async encrypt(peer: string, plaintext: string): Promise<string> {
+      // deno-lint-ignore no-explicit-any
+      return (window as any).nostr._call("nip04.encrypt", {
+        peer,
+        plaintext,
+      });
+    },
+    async decrypt(peer: string, ciphertext: string): Promise<string> {
+      // deno-lint-ignore no-explicit-any
+      return (window as any).nostr._call("nip04.decrypt", {
+        peer,
+        ciphertext,
+      });
+    },
+  },
 
-    pendingRequests.set(id, {
-      resolve: resolve as (v: unknown) => void,
-      reject,
+  nip44: {
+    async encrypt(peer: string, plaintext: string): Promise<string> {
+      // deno-lint-ignore no-explicit-any
+      return (window as any).nostr._call("nip44.encrypt", {
+        peer,
+        plaintext,
+      });
+    },
+    async decrypt(peer: string, ciphertext: string): Promise<string> {
+      // deno-lint-ignore no-explicit-any
+      return (window as any).nostr._call("nip44.decrypt", {
+        peer,
+        ciphertext,
+      });
+    },
+  },
+
+  _call(
+    type: string,
+    params: Record<string, unknown>,
+  ): Promise<unknown> {
+    const id = Math.random().toString().slice(-4);
+    // deno-lint-ignore no-explicit-any
+    const self = (window as any).nostr;
+    return new Promise((resolve, reject) => {
+      self._requests[id] = { resolve, reject };
+      window.postMessage(
+        {
+          direction: "from-page",
+          id,
+          method: type,
+          params,
+        },
+        "*",
+      );
+
+      // Timeout after 5 minutes (signing on phone can take time)
+      setTimeout(() => {
+        if (self._requests[id]) {
+          delete self._requests[id];
+          reject(new Error("Request timeout"));
+        }
+      }, 300000);
     });
-
-    window.postMessage(
-      {
-        direction: "from-page",
-        id,
-        method,
-        params,
-      },
-      "*",
-    );
-
-    // Timeout after 5 minutes (signing on phone can take time)
-    setTimeout(() => {
-      if (pendingRequests.has(id)) {
-        pendingRequests.delete(id);
-        reject(new Error("Request timeout"));
-      }
-    }, 300000);
-  });
-}
+  },
+};
 
 // Listen for responses from content script
-window.addEventListener("message", (event) => {
+window.addEventListener("message", (event: MessageEvent) => {
   if (event.source !== window) return;
   if (!event.data || event.data.direction !== "from-extension") return;
 
   const { id, result, error } = event.data;
-  const pending = pendingRequests.get(id);
+  // deno-lint-ignore no-explicit-any
+  const self = (window as any).nostr;
+  if (!self._requests[id]) return;
 
-  if (pending) {
-    pendingRequests.delete(id);
-
-    if (error) {
-      pending.reject(new Error(error));
-    } else {
-      pending.resolve(result);
-    }
+  if (error) {
+    const err = new Error(error);
+    self._requests[id].reject(err);
+  } else {
+    self._requests[id].resolve(result);
   }
+
+  delete self._requests[id];
 });
 
-// NIP-07 interface
-const nostr = {
-  /**
-   * Get the user's public key (hex)
-   */
-  async getPublicKey(): Promise<string> {
-    return sendRequest<string>("getPublicKey");
-  },
+// Replace nostr: scheme links with web URLs
+let replacing: boolean | null = null;
+document.addEventListener("mousedown", replaceNostrSchemeLink);
+async function replaceNostrSchemeLink(e: MouseEvent) {
+  const target = e.target as HTMLAnchorElement;
+  if (target.tagName !== "A" || !target.href?.startsWith("nostr:")) return;
+  if (replacing === false) return;
 
-  /**
-   * Sign an event
-   */
-  async signEvent(event: UnsignedEvent): Promise<SignedEvent> {
-    // Ensure created_at is set
-    const eventWithTimestamp = {
-      ...event,
-      created_at: event.created_at ?? Math.floor(Date.now() / 1000),
-    };
-    return sendRequest<SignedEvent>("signEvent", [eventWithTimestamp]);
-  },
-
-  /**
-   * Get relay list (NIP-07 optional)
-   * We return empty - relays are managed by Amber
-   */
-  async getRelays(): Promise<
-    Record<string, { read: boolean; write: boolean }>
-  > {
-    return sendRequest<Record<string, { read: boolean; write: boolean }>>(
-      "getRelays",
-    );
-  },
-
-  /**
-   * NIP-04 encryption (not supported - throws)
-   */
-  nip04: {
-    async encrypt(_pubkey: string, _plaintext: string): Promise<string> {
-      throw new Error("NIP-04 encryption is not supported by this signer");
-    },
-    async decrypt(_pubkey: string, _ciphertext: string): Promise<string> {
-      throw new Error("NIP-04 decryption is not supported by this signer");
-    },
-  },
-
-  /**
-   * NIP-44 encryption (not supported - throws)
-   */
-  nip44: {
-    async encrypt(_pubkey: string, _plaintext: string): Promise<string> {
-      throw new Error("NIP-44 encryption is not supported by this signer");
-    },
-    async decrypt(_pubkey: string, _ciphertext: string): Promise<string> {
-      throw new Error("NIP-44 decryption is not supported by this signer");
-    },
-  },
-};
-
-// Freeze to prevent tampering
-Object.freeze(nostr);
-Object.freeze(nostr.nip04);
-Object.freeze(nostr.nip44);
-
-// Expose on window
-Object.defineProperty(window, "nostr", {
-  value: nostr,
-  writable: false,
-  configurable: false,
-});
+  try {
+    // deno-lint-ignore no-explicit-any
+    const response = await (window as any).nostr._call("replaceURL", {
+      url: target.href,
+    });
+    if (response === false) {
+      replacing = false;
+      return;
+    }
+    target.href = response as string;
+  } catch {
+    // silently ignore if not supported
+  }
+}
 
 console.log("[NIP-07] Remote signer ready");
